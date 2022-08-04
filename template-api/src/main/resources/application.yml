@@ -1,0 +1,14 @@
+logging:
+  file:
+    path: logs/template-api
+  level:
+    cz.frysavy.template: trace
+
+server:
+  error:
+    include-message: always
+  port: 8081
+
+spring.output:
+  ansi:
+    enabled: always

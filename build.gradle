@@ -1,0 +1,62 @@
+plugins {
+    id 'org.owasp.dependencycheck'
+    id 'org.sonarqube'
+}
+
+allprojects {
+    plugins.withId('java') {
+        sourceCompatibility = javaVersion
+
+        configurations {
+            compileOnly {
+                extendsFrom annotationProcessor
+            }
+        }
+
+        repositories {
+            mavenCentral()
+        }
+
+        tasks.named('test') {
+            useJUnitPlatform()
+        }
+    }
+
+    plugins.withId('jacoco') {
+        jacoco {
+            toolVersion = jacocoVersion
+        }
+
+        jacocoTestReport {
+            reports {
+                xml.required = true
+            }
+        }
+
+        tasks.jacocoTestReport.dependsOn tasks.test
+    }
+
+    plugins.withId('io.spring.dependency-management') {
+        dependencyManagement {
+            imports {
+                mavenBom "org.keycloak.bom:keycloak-adapter-bom:${keycloakVersion}"
+                mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+                mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+            }
+        }
+    }
+}
+
+dependencyCheck {
+    formats = ['HTML', 'JSON']
+    suppressionFile = "${projectDir}/project-suppression.xml"
+}
+
+sonarqube {
+    properties {
+        property 'sonar.dependencyCheck.htmlReportPath', "${buildDir}/reports/dependency-check-report.html"
+        property 'sonar.dependencyCheck.jsonReportPath', "${buildDir}/reports/dependency-check-report.json"
+    }
+}
+
+tasks.sonarqube.dependsOn allprojects.collect { it.tasks.withType(JacocoReport) }, tasks.dependencyCheckAggregate
